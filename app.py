@@ -10,30 +10,26 @@ app = Flask(__name__)
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        # Recupera a string com os nomes separados por vírgula
-        pokemon_names = request.form.get("pokemon_names")
-        # Divide a string nos nomes individuais e remove espaços extras
-        pokemon_list = [
-            name.strip().lower() for name in pokemon_names.split(",") if name.strip()
-        ]
-
+        data = request.get_json()
         images = {}
 
-        for pokemon in pokemon_list:
-            try:
-                response = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemon}")
-                response.raise_for_status()
-                data = response.json()
-                sprite_url = data["sprites"]["versions"]["generation-vii"]["icons"][
-                    "front_default"
-                ]
+        for pokemon in data:
+            name = pokemon["name"]
+            icon_url = pokemon["icon"]
 
-                if sprite_url:
-                    image_response = requests.get(sprite_url)
-                    image_response.raise_for_status()
-                    images[pokemon] = BytesIO(image_response.content)
-            except requests.exceptions.RequestException:
-                images[pokemon] = None
+            if icon_url:
+                response = requests.get(icon_url)
+                response.raise_for_status()
+                if len(data) == 1:
+                    file_name = f"{name}.png"
+                    return send_file(
+                        BytesIO(response.content),
+                        mimetype="image/png",
+                        as_attachment=True,
+                        download_name=file_name,
+                    )
+                else:
+                    images[name] = BytesIO(response.content)
 
         if images:
             zip_buffer = BytesIO()
@@ -58,4 +54,4 @@ def catch_all(path):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=True)
