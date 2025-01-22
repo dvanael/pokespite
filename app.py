@@ -1,6 +1,5 @@
 from flask import Flask, request, render_template, send_file
 import requests
-import os
 from io import BytesIO
 from zipfile import ZipFile
 
@@ -50,7 +49,7 @@ def index():
 
 @app.route("/<path:path>", methods=["GET"])
 def catch_all(path):
-    return "404 - Page Not Found", 404
+    return render_template("404.html")
 
 
 if __name__ == "__main__":
